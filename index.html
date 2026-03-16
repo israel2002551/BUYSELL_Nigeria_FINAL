@@ -2073,7 +2073,8 @@ async function sendMagicLink() {
   btn.disabled = true; btnText.textContent = ''; spinner.classList.remove('hidden');
 
   // Build a clean redirect URL — strips any hash/query so Supabase token appends cleanly
-  const redirectTo = window.location.origin + window.location.pathname;
+  // Use exact GitHub Pages URL — window.location can return wrong path in some browsers
+  const redirectTo = 'https://israel2002551.github.io/BUYSELL_Nigeria_FINAL/';
 
   try {
     const { error } = await db.auth.signInWithOtp({
