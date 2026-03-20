@@ -2626,8 +2626,11 @@ function payWithPaystack() {
     ref: 'bs_' + Date.now() + '_' + Math.random().toString(36).substr(2,8),
     metadata: { buyer_id: currentUser.id, cart: JSON.stringify(cart.map(c=>({id:c.id,name:c.name,qty:c.qty||1,price:c.price}))) },
     callback: function(response) {
-      saveOrderToDb(response.reference, 'paystack', response.reference);
-    },
+      goCheckoutStep(3);  // show success screen
+      cart = []; saveCart();
+      document.getElementById('co-order-id').textContent = response.reference;
+      toast('Payment received! Order being confirmed…', '', 'success', 5000);
+   },
     onClose: function() { toast('Payment cancelled','','warn'); }
   });
   handler.openIframe();
