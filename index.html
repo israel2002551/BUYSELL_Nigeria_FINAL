@@ -1020,7 +1020,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
         <p class="dash-page-sub">Products with videos get 3× more sales! 🎬</p>
         <div class="card card-pad-lg" style="max-width:650px">
           <form id="add-prod-form" onsubmit="submitProduct(event)">
-            <div class="form-group"><label class="form-label">Product Name <span class="req">*</span></label><input type="text" id="p-name" class="form-input" required placeholder="e.g., iPhone 14 Pro Max"></div>
+            <div class="form-group"><label class="form-label">Product Name <span class="req">*</span></label><input type="text" id="p-name" class="form-input" required placeholder="e.g., iPhone 14 Pro Max" maxlength="120"></div>
             <div class="form-grid form-grid-2">
               <div class="form-group"><label class="form-label">Price (₦) <span class="req">*</span></label><input type="number" id="p-price" class="form-input" required placeholder="500000" inputmode="numeric"></div>
               <div class="form-group"><label class="form-label">Original Price</label><input type="number" id="p-orig-price" class="form-input" placeholder="Crossed-out price" inputmode="numeric"></div>
@@ -1037,7 +1037,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
                 <select id="p-condition" class="form-select" required><option value="new">Brand New</option><option value="used-like-new">Used – Like New</option><option value="used-good">Used – Good</option></select>
               </div>
             </div>
-            <div class="form-group"><label class="form-label">Description <span class="req">*</span></label><textarea id="p-desc" class="form-textarea" required placeholder="Describe your product in detail…"></textarea></div>
+            <div class="form-group"><label class="form-label">Description <span class="req">*</span></label><textarea id="p-desc" class="form-textarea" required placeholder="Describe your product in detail…" maxlength="2000"></textarea></div>
             <div class="form-group"><label class="form-label">Location <span class="req">*</span></label><input type="text" id="p-location" class="form-input" required placeholder="e.g., Ikeja, Lagos"></div>
             <div class="form-group"><label class="form-label">Product Image <span class="req">*</span></label><input type="file" id="p-image" class="form-input" accept="image/*" style="background:var(--cream)"></div>
             <div class="form-group"><label class="form-label">Product Video <span style="color:var(--text3);font-weight:400">(Recommended — 3× more sales)</span></label><input type="file" id="p-video" class="form-input" accept="video/*" style="background:var(--cream)"><div style="font-size:.74rem;color:var(--text3);margin-top:.28rem"><i class="fa-solid fa-info-circle"></i> Max 50MB.</div></div>
@@ -1567,7 +1567,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
       <h3 class="mb-3">Delivery Information</h3>
       <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input type="text" id="co-name" class="form-input" required placeholder="Recipient name" autocomplete="name"></div>
       <div class="form-group"><label class="form-label">Phone Number <span class="req">*</span></label><input type="tel" id="co-phone" class="form-input" required placeholder="0801 234 5678" inputmode="tel" autocomplete="tel"></div>
-      <div class="form-group"><label class="form-label">Delivery Address <span class="req">*</span></label><textarea id="co-address" class="form-textarea" required placeholder="Street, area, city, state" rows="3" autocomplete="street-address"></textarea></div>
+      <div class="form-group"><label class="form-label">Delivery Address <span class="req">*</span></label><textarea id="co-address" class="form-textarea" required placeholder="Street, area, city, state" rows="3" autocomplete="street-address" maxlength="300"></textarea></div>
       <div class="order-items-list" id="co-items"></div>
       <div class="flex justify-between items-center" style="margin-bottom:1rem"><span class="font-600">Total</span><span class="font-bold" style="font-size:1.1rem;color:var(--green)" id="co-total"></span></div>
       <button class="btn btn-primary btn-full" onclick="goCheckoutStep(2)">Continue to Payment <i class="fa-solid fa-arrow-right"></i></button>
