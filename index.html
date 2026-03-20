@@ -1724,23 +1724,26 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
 
 <script data-cfasync="false">
 // ====================================================
-//  CONFIG
+//  CONFIG — fetched at runtime, no secrets in source
 // ====================================================
-const SB_URL = 'https://obzhlmzswthnorkiqemh.supabase.co';
-const SB_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iemhsbXpzd3Robm9ya2lxZW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMDE2NjgsImV4cCI6MjA4ODY3NzY2OH0.5I4Ln0913h0AH5z4e64QBVx88igcIwEaM0Lz11FqDvU';
-const ADMIN_EMAIL = 'israelefe093@gmail.com';
-const PAYSTACK_PUBLIC_KEY = 'pk_test_xxxxxxxxxxxxxxxx'; // Replace with live key
-const COMMISSION_AMOUNT = 500000; // ₦5,000 in kobo
+let SB_URL = '', SB_KEY = '', ADMIN_EMAIL = '', PAYSTACK_PUBLIC_KEY = '';
+const COMMISSION_AMOUNT = 500000;
 const PLATFORM_FEE_PCT = 0.03;
+let db;
 
-const db = window.supabase.createClient(SB_URL, SB_KEY, {
-  auth: {
-    persistSession:     true,
-    autoRefreshToken:   true,
-    detectSessionInUrl: true,
-    storage:            window.localStorage
-  }
-});
+async function fetchConfig() {
+  const res = await fetch('/api/config');
+  if (!res.ok) throw new Error('Config fetch failed');
+  const cfg = await res.json();
+  SB_URL = cfg.supabaseUrl;
+  SB_KEY = cfg.supabaseAnonKey;
+  PAYSTACK_PUBLIC_KEY = cfg.paystackPublicKey;
+  ADMIN_EMAIL = cfg.adminEmail;
+  db = window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: { persistSession: true, autoRefreshToken: true,
+            detectSessionInUrl: true, storage: window.localStorage }
+  });
+}
 
 // ====================================================
 //  STATE
@@ -3905,6 +3908,7 @@ function shareCurrentProduct() {
 //  INIT
 // ====================================================
 (async function init() {
+  await fetchConfig(); 
   await checkSession();
   updateCartCount();
   handleDeepLink();
