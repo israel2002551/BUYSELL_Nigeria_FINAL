@@ -12,6 +12,11 @@
 <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script data-cfasync="false" src="https://js.paystack.co/v1/inline.js"></script>
 <script data-cfasync="false" src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<!-- Security headers (supplement server-side headers) -->
+<meta http-equiv="X-Content-Type-Options" content="nosniff">
+<meta http-equiv="X-XSS-Protection" content="1; mode=block">
+<meta http-equiv="Referrer-Policy" content="strict-origin-when-cross-origin">
+<meta http-equiv="Permissions-Policy" content="camera=(), microphone=(), geolocation=()">
 <style>
 /* ====================================================
    DESIGN SYSTEM v3
@@ -1020,7 +1025,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
         <p class="dash-page-sub">Products with videos get 3× more sales! 🎬</p>
         <div class="card card-pad-lg" style="max-width:650px">
           <form id="add-prod-form" onsubmit="submitProduct(event)">
-            <div class="form-group"><label class="form-label">Product Name <span class="req">*</span></label><input type="text" id="p-name" class="form-input" required placeholder="e.g., iPhone 14 Pro Max" maxlength="120"></div>
+            <div class="form-group"><label class="form-label">Product Name <span class="req">*</span></label><input type="text" id="p-name" class="form-input" required placeholder="e.g., iPhone 14 Pro Max"></div>
             <div class="form-grid form-grid-2">
               <div class="form-group"><label class="form-label">Price (₦) <span class="req">*</span></label><input type="number" id="p-price" class="form-input" required placeholder="500000" inputmode="numeric"></div>
               <div class="form-group"><label class="form-label">Original Price</label><input type="number" id="p-orig-price" class="form-input" placeholder="Crossed-out price" inputmode="numeric"></div>
@@ -1037,7 +1042,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
                 <select id="p-condition" class="form-select" required><option value="new">Brand New</option><option value="used-like-new">Used – Like New</option><option value="used-good">Used – Good</option></select>
               </div>
             </div>
-            <div class="form-group"><label class="form-label">Description <span class="req">*</span></label><textarea id="p-desc" class="form-textarea" required placeholder="Describe your product in detail…" maxlength="2000"></textarea></div>
+            <div class="form-group"><label class="form-label">Description <span class="req">*</span></label><textarea id="p-desc" class="form-textarea" required placeholder="Describe your product in detail…"></textarea></div>
             <div class="form-group"><label class="form-label">Location <span class="req">*</span></label><input type="text" id="p-location" class="form-input" required placeholder="e.g., Ikeja, Lagos"></div>
             <div class="form-group"><label class="form-label">Product Image <span class="req">*</span></label><input type="file" id="p-image" class="form-input" accept="image/*" style="background:var(--cream)"></div>
             <div class="form-group"><label class="form-label">Product Video <span style="color:var(--text3);font-weight:400">(Recommended — 3× more sales)</span></label><input type="file" id="p-video" class="form-input" accept="video/*" style="background:var(--cream)"><div style="font-size:.74rem;color:var(--text3);margin-top:.28rem"><i class="fa-solid fa-info-circle"></i> Max 50MB.</div></div>
@@ -1427,25 +1432,37 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
   <div class="modal-box"><button class="modal-close" onclick="closeModal('auth-modal')"><i class="fa-solid fa-times"></i></button>
     <div class="auth-logo"><div class="brand-icon" style="width:52px;height:52px;font-size:1.5rem;margin-bottom:.5rem">B</div><div class="brand-text" style="color:var(--text)">BUY<span>SELL</span></div></div>
     <div class="auth-tabs">
-      <button class="auth-tab active" id="auth-tab-login"   onclick="toggleAuth('login')">Sign In</button>
-      <button class="auth-tab"        id="auth-tab-signup"  onclick="toggleAuth('signup')">Sign Up</button>
-      <button class="auth-tab"        id="auth-tab-magic"   onclick="toggleAuth('magic')">✉️ Magic Link</button>
+      <button class="auth-tab active" id="auth-tab-login"  onclick="toggleAuth('login')">Sign In</button>
+      <button class="auth-tab"        id="auth-tab-signup" onclick="toggleAuth('signup')">Sign Up</button>
     </div>
-    <!-- Magic link panel (shown instead of form) -->
-    <div id="auth-magic-panel" class="hidden">
-      <p style="font-size:.83rem;color:var(--text2);margin-bottom:.9rem;line-height:1.6">Enter your email and we'll send you a <strong>one-click login link</strong> — no password needed.</p>
-      <div class="form-group">
-        <label class="form-label">Email <span class="req">*</span></label>
-        <input type="email" id="magic-email" class="form-input" placeholder="you@email.com" autocomplete="email">
+
+    <!-- Forgot Password Panel -->
+    <div id="auth-forgot-panel" class="hidden">
+      <div id="forgot-step-1">
+        <p style="font-size:.83rem;color:var(--text2);margin-bottom:.9rem;line-height:1.6">Enter your email and we'll send you a <strong>password reset link</strong>.</p>
+        <div class="form-group">
+          <label class="form-label">Email <span class="req">*</span></label>
+          <input type="email" id="forgot-email" class="form-input" placeholder="you@email.com" autocomplete="email">
+        </div>
+        <button class="btn btn-primary btn-full btn-lg" id="forgot-btn" onclick="sendPasswordReset()">
+          <span id="forgot-btn-text">Send Reset Link</span>
+          <span id="forgot-spinner" class="spinner hidden"></span>
+        </button>
+        <button class="btn btn-ghost btn-full btn-sm" style="margin-top:.5rem;color:var(--text3)" onclick="toggleAuth('login')">
+          ← Back to Sign In
+        </button>
       </div>
-      <button class="btn btn-primary btn-full btn-lg" id="magic-btn" onclick="sendMagicLink()">
-        <span id="magic-btn-text">Send Magic Link</span>
-        <span id="magic-spinner" class="spinner hidden"></span>
-      </button>
-      <div id="magic-sent" class="hidden" style="margin-top:1rem;padding:.85rem;background:var(--green-xlt);border:1px solid var(--green-lt);border-radius:var(--radius-sm);font-size:.84rem;color:var(--text2);text-align:center">
-        ✅ Link sent! Check your email and click the link to sign in.
+      <div id="forgot-step-2" class="hidden" style="text-align:center;padding:1rem 0">
+        <div style="font-size:2.5rem;margin-bottom:.75rem">📧</div>
+        <div style="font-weight:700;font-size:1rem;color:var(--text);margin-bottom:.4rem">Check your email</div>
+        <div id="forgot-sent-to" style="font-size:.82rem;color:var(--text3);margin-bottom:.75rem"></div>
+        <p style="font-size:.82rem;color:var(--text2);line-height:1.6">Click the link in the email to reset your password. The link expires in <strong>1 hour</strong>.</p>
+        <button class="btn btn-ghost btn-full btn-sm" style="margin-top:1rem;color:var(--text3)" onclick="toggleAuth('login')">
+          ← Back to Sign In
+        </button>
       </div>
     </div>
+
     <form id="auth-form" onsubmit="handleAuth(event)">
       <div id="auth-name-group" class="form-group hidden"><label class="form-label">Full Name <span class="req">*</span></label><input type="text" id="auth-name" class="form-input" placeholder="Your full name" autocomplete="name"></div>
       <div id="auth-role-group" class="form-group hidden">
@@ -1476,6 +1493,9 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
       <div class="form-group"><label class="form-label">Password <span class="req">*</span></label><input type="password" id="auth-password" class="form-input" required placeholder="Min 6 characters" autocomplete="current-password"></div>
       <div id="auth-wa-group" class="form-group hidden"><label class="form-label">WhatsApp Number <span class="req">*</span></label><input type="tel" id="auth-wa" class="form-input" placeholder="0801 234 5678" inputmode="tel"></div>
       <button type="submit" class="btn btn-primary btn-full btn-lg" id="auth-btn"><span id="auth-btn-text">Sign In</span><span id="auth-spinner" class="spinner hidden"></span></button>
+      <div id="forgot-link-row" style="text-align:center;margin-top:.65rem">
+        <button type="button" class="btn btn-ghost btn-sm" style="color:var(--text3);font-size:.8rem" onclick="toggleAuth('forgot')">Forgot password?</button>
+      </div>
     </form>
   </div>
 </div>
@@ -1567,7 +1587,7 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
       <h3 class="mb-3">Delivery Information</h3>
       <div class="form-group"><label class="form-label">Full Name <span class="req">*</span></label><input type="text" id="co-name" class="form-input" required placeholder="Recipient name" autocomplete="name"></div>
       <div class="form-group"><label class="form-label">Phone Number <span class="req">*</span></label><input type="tel" id="co-phone" class="form-input" required placeholder="0801 234 5678" inputmode="tel" autocomplete="tel"></div>
-      <div class="form-group"><label class="form-label">Delivery Address <span class="req">*</span></label><textarea id="co-address" class="form-textarea" required placeholder="Street, area, city, state" rows="3" autocomplete="street-address" maxlength="300"></textarea></div>
+      <div class="form-group"><label class="form-label">Delivery Address <span class="req">*</span></label><textarea id="co-address" class="form-textarea" required placeholder="Street, area, city, state" rows="3" autocomplete="street-address"></textarea></div>
       <div class="order-items-list" id="co-items"></div>
       <div class="flex justify-between items-center" style="margin-bottom:1rem"><span class="font-600">Total</span><span class="font-bold" style="font-size:1.1rem;color:var(--green)" id="co-total"></span></div>
       <button class="btn btn-primary btn-full" onclick="goCheckoutStep(2)">Continue to Payment <i class="fa-solid fa-arrow-right"></i></button>
@@ -1722,28 +1742,78 @@ h1,h2,h3,h4,h5,h6{font-family:'Syne',sans-serif;line-height:1.2}
   </div>
 </div>
 
+<!-- RESET PASSWORD MODAL -->
+<div id="reset-password-modal" class="modal-overlay">
+  <div class="modal-box" style="max-width:400px">
+    <div class="auth-logo">
+      <div class="brand-icon" style="width:52px;height:52px;font-size:1.5rem;margin-bottom:.5rem">🔐</div>
+      <div style="font-weight:700;font-size:1.1rem;color:var(--text)">Set New Password</div>
+      <div style="font-size:.82rem;color:var(--text3);margin-top:.2rem">Choose a strong password for your account</div>
+    </div>
+    <div class="form-group" style="margin-top:1rem">
+      <label class="form-label">New Password <span class="req">*</span></label>
+      <input type="password" id="new-password" class="form-input" placeholder="Min 6 characters" autocomplete="new-password">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Confirm Password <span class="req">*</span></label>
+      <input type="password" id="confirm-password" class="form-input" placeholder="Repeat your password" autocomplete="new-password">
+    </div>
+    <button class="btn btn-primary btn-full btn-lg" id="reset-pwd-btn" onclick="updatePassword()">
+      <span id="reset-pwd-text">Update Password</span>
+      <span id="reset-pwd-spinner" class="spinner hidden"></span>
+    </button>
+  </div>
+</div>
+
 <script data-cfasync="false">
 // ====================================================
-//  CONFIG — fetched at runtime, no secrets in source
+//  CONFIG
 // ====================================================
-let SB_URL = '', SB_KEY = '', ADMIN_EMAIL = '', PAYSTACK_PUBLIC_KEY = '';
-const COMMISSION_AMOUNT = 500000;
-const PLATFORM_FEE_PCT = 0.03;
-let db;
+const SB_URL  = 'https://obzhlmzswthnorkiqemh.supabase.co';
+const SB_KEY  = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9iemhsbXpzd3Robm9ya2lxZW1oIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzMxMDE2NjgsImV4cCI6MjA4ODY3NzY2OH0.5I4Ln0913h0AH5z4e64QBVx88igcIwEaM0Lz11FqDvU';
+const EDGE_URL = SB_URL + '/functions/v1';
 
-async function fetchConfig() {
-  const res = await fetch('/api/config');
-  if (!res.ok) throw new Error('Config fetch failed');
-  const cfg = await res.json();
-  SB_URL = cfg.supabaseUrl;
-  SB_KEY = cfg.supabaseAnonKey;
-  PAYSTACK_PUBLIC_KEY = cfg.paystackPublicKey;
-  ADMIN_EMAIL = cfg.adminEmail;
-  db = window.supabase.createClient(SB_URL, SB_KEY, {
-    auth: { persistSession: true, autoRefreshToken: true,
-            detectSessionInUrl: true, storage: window.localStorage }
+/** Call a deployed Edge Function securely with the user's JWT */
+async function callEdge(fnName, body) {
+  const session = (await db.auth.getSession()).data.session;
+  const token   = session?.access_token;
+  if (!token) throw new Error('Not authenticated');
+
+  const res = await fetch(`${EDGE_URL}/${fnName}`, {
+    method:  'POST',
+    headers: {
+      'Content-Type':  'application/json',
+      'Authorization': `Bearer ${token}`,
+      'apikey':        SB_KEY
+    },
+    body: JSON.stringify(body)
+  });
+
+  const data = await res.json();
+  if (!res.ok) throw new Error(data.error || `${fnName} failed (${res.status})`);
+  return data;
+}
+const ADMIN_EMAIL = 'israelefe093@gmail.com';
+const PAYSTACK_PUBLIC_KEY = 'pk_test_xxxxxxxxxxxxxxxx'; // Replace with live key
+const COMMISSION_AMOUNT = 500000; // ₦5,000 in kobo
+const PLATFORM_FEE_PCT = 0.03;
+
+// Safe Supabase client init — waits for CDN if not ready yet
+function initSupabaseClient() {
+  if (!window.supabase?.createClient) {
+    console.error('Supabase CDN not loaded');
+    return null;
+  }
+  return window.supabase.createClient(SB_URL, SB_KEY, {
+    auth: {
+      persistSession:     true,
+      autoRefreshToken:   true,
+      detectSessionInUrl: true,
+      storage:            window.localStorage
+    }
   });
 }
+let db = initSupabaseClient();
 
 // ====================================================
 //  STATE
@@ -1798,21 +1868,27 @@ document.querySelectorAll('.modal-overlay').forEach(m => m.addEventListener('cli
 //  AUTH
 // ====================================================
 function toggleAuth(mode) {
-  const isMagic  = mode === 'magic';
   const isLogin  = mode === 'login';
   const isSignup = mode === 'signup';
+  const isForgot = mode === 'forgot';
 
   // Tab highlights
   document.getElementById('auth-tab-login').classList.toggle('active',  isLogin);
   document.getElementById('auth-tab-signup').classList.toggle('active', isSignup);
-  document.getElementById('auth-tab-magic').classList.toggle('active',  isMagic);
 
   // Show/hide panels
-  document.getElementById('auth-form').classList.toggle('hidden',        isMagic);
-  document.getElementById('auth-magic-panel').classList.toggle('hidden', !isMagic);
-  if (isMagic) return;
+  document.getElementById('auth-form').classList.toggle('hidden',          isForgot);
+  document.getElementById('auth-forgot-panel').classList.toggle('hidden',  !isForgot);
+  document.getElementById('forgot-link-row').classList.toggle('hidden',    !isLogin || isForgot);
 
-  // Form fields
+  if (isForgot) {
+    // Reset forgot panel to step 1
+    document.getElementById('forgot-step-1').classList.remove('hidden');
+    document.getElementById('forgot-step-2').classList.add('hidden');
+    document.getElementById('forgot-email').value = '';
+    return;
+  }
+
   document.getElementById('auth-name-group').classList.toggle('hidden', isLogin);
   document.getElementById('auth-role-group').classList.toggle('hidden', isLogin);
   const selRole = document.querySelector('input[name="auth-role-radio"]:checked')?.value || 'buyer';
@@ -1987,16 +2063,28 @@ async function onAuthSuccess(user) {
   }
 
   currentRole = currentUser.profile?.role || 'buyer';
+
+  // Auto-promote to admin in DB if email matches and role isn't set yet
+  if (currentUser.email === ADMIN_EMAIL && currentUser.profile?.role !== 'admin') {
+    await db.from('profiles').update({ role: 'admin', commission_paid: true }).eq('id', currentUser.id);
+    if (currentUser.profile) currentUser.profile.role = 'admin';
+    currentRole = 'admin';
+  }
+
   updateNavForUser();
 }
 
 async function checkSession() {
   // Subscribe to auth state changes FIRST so we don't miss the initial event
   db.auth.onAuthStateChange(async (event, session) => {
+    if (event === 'PASSWORD_RECOVERY') {
+      // User clicked reset link in email — show set new password modal
+      showModal('reset-password-modal');
+      return;
+    }
     if (event === 'SIGNED_IN' && session?.user) {
       if (!currentUser) {
         await onAuthSuccess(session.user);
-        // Auto-enter site if still on landing page
         if (document.getElementById('landing') &&
             document.getElementById('landing').style.display !== 'none') {
           enterSite(currentUser?.profile?.role || 'buyer');
@@ -2031,13 +2119,82 @@ function updateNavForUser() {
   document.getElementById('nav-avatar-inner').style.fontSize = '.9rem';
   document.getElementById('dash-user-name').textContent = currentUser.profile?.name || 'Seller';
   document.getElementById('dash-user-email').textContent = currentUser.email || '';
-  // Admin check
+  // Show admin nav link for admin email — guardAdminPanel blocks access if DB role not set
   if (currentUser.email === ADMIN_EMAIL) {
     document.getElementById('admin-nav-item')?.classList.remove('hidden');
+    document.getElementById('admin-nav-item').style.display = 'flex';
   }
   // Referral link
   const rc = currentUser.profile?.referral_code || 'ref_' + currentUser.id?.substr(0,8);
   document.getElementById('referral-link').value = `https://buysell.ng/ref/${rc}`;
+}
+
+async function sendPasswordReset() {
+  const email = document.getElementById('forgot-email').value.trim();
+  if (!email) { toast('Enter your email', '', 'warn'); return; }
+
+  const btn     = document.getElementById('forgot-btn');
+  const btnText = document.getElementById('forgot-btn-text');
+  const spinner = document.getElementById('forgot-spinner');
+  btn.disabled = true; btnText.textContent = ''; spinner.classList.remove('hidden');
+
+  try {
+    const { error } = await db.auth.resetPasswordForEmail(email, {
+      redirectTo: 'https://israel2002551.github.io/BUYSELL_Nigeria_FINAL/'
+    });
+
+    if (error) {
+      const msg = error.message?.toLowerCase() || '';
+      if (msg.includes('rate limit') || msg.includes('too many')) {
+        toast('Too many attempts', 'Wait a few minutes and try again', 'warn', 7000);
+      } else {
+        toast('Failed to send reset link', error.message, 'error');
+      }
+      return;
+    }
+
+    // Show success step
+    document.getElementById('forgot-step-1').classList.add('hidden');
+    document.getElementById('forgot-step-2').classList.remove('hidden');
+    document.getElementById('forgot-sent-to').textContent = 'Reset link sent to ' + email;
+    toast('Reset link sent! 📧', 'Check your email inbox', 'success', 6000);
+
+  } catch(e) {
+    toast('Error', e.message || 'Please try again', 'error');
+  } finally {
+    spinner.classList.add('hidden');
+    btnText.textContent = 'Send Reset Link';
+    btn.disabled = false;
+  }
+}
+
+async function updatePassword() {
+  const newPwd  = document.getElementById('new-password').value;
+  const confPwd = document.getElementById('confirm-password').value;
+
+  if (!newPwd || newPwd.length < 6) { toast('Password too short', 'Minimum 6 characters', 'warn'); return; }
+  if (newPwd !== confPwd)           { toast('Passwords do not match', 'Please re-enter your password', 'warn'); return; }
+
+  const btn     = document.getElementById('reset-pwd-btn');
+  const btnText = document.getElementById('reset-pwd-text');
+  const spinner = document.getElementById('reset-pwd-spinner');
+  btn.disabled = true; btnText.textContent = ''; spinner.classList.remove('hidden');
+
+  try {
+    const { error } = await db.auth.updateUser({ password: newPwd });
+    if (error) throw error;
+    closeModal('reset-password-modal');
+    toast('Password updated! ✅', 'You can now sign in with your new password', 'success', 6000);
+    // Clear fields
+    document.getElementById('new-password').value = '';
+    document.getElementById('confirm-password').value = '';
+  } catch(e) {
+    toast('Failed to update password', e.message || 'Please try again', 'error');
+  } finally {
+    spinner.classList.add('hidden');
+    btnText.textContent = 'Update Password';
+    btn.disabled = false;
+  }
 }
 
 async function logoutUser() {
@@ -2049,74 +2206,9 @@ async function logoutUser() {
   toast('Signed Out', '', 'info');
 }
 
-async function signInWithGoogle() {
-  try {
-    const { error } = await db.auth.signInWithOAuth({
-      provider: 'google',
-      options: { redirectTo: window.location.href, queryParams: { access_type: 'offline', prompt: 'consent' } }
-    });
-    if (error) throw error;
-  } catch(err) {
-    toast('Google Sign-In Failed', err.message, 'error');
-  }
-}
 
-async function sendMagicLink() {
-  const email = document.getElementById('magic-email').value.trim();
-  if (!email) { toast('Enter your email', '', 'warn'); return; }
 
-  // Validate email format
-  if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-    toast('Invalid email', 'Please enter a valid email address', 'warn'); return;
-  }
 
-  const btn     = document.getElementById('magic-btn');
-  const btnText = document.getElementById('magic-btn-text');
-  const spinner = document.getElementById('magic-spinner');
-  btn.disabled = true; btnText.textContent = ''; spinner.classList.remove('hidden');
-
-  // Build a clean redirect URL — strips any hash/query so Supabase token appends cleanly
-  // Use exact GitHub Pages URL — window.location can return wrong path in some browsers
-  const redirectTo = 'https://israel2002551.github.io/BUYSELL_Nigeria_FINAL/';
-
-  try {
-    const { error } = await db.auth.signInWithOtp({
-      email,
-      options: {
-        shouldCreateUser: true,
-        emailRedirectTo: redirectTo
-      }
-    });
-
-    if (error) {
-      const msg = error.message?.toLowerCase() || '';
-      if (msg.includes('rate limit') || msg.includes('too many') || msg.includes('email rate')) {
-        toast('Email limit reached', 'Supabase allows 2 magic links per hour. Wait and try again.', 'warn', 8000);
-      } else if (msg.includes('fetch') || msg.includes('network') || msg.includes('failed to')) {
-        toast('Connection failed', 'Check your internet connection and try again', 'error', 6000);
-      } else if (msg.includes('not allowed') || msg.includes('redirect')) {
-        toast('Redirect URL not allowed',
-          'Go to Supabase → Auth → URL Configuration → add your site URL to Redirect URLs',
-          'error', 10000);
-      } else {
-        toast('Could not send link', error.message, 'error');
-      }
-      return;
-    }
-
-    // Success
-    document.getElementById('magic-sent').classList.remove('hidden');
-    btn.classList.add('hidden');
-    toast('Magic link sent! ✉️', 'Check your inbox — link expires in 1 hour', 'success', 8000);
-
-  } catch(err) {
-    toast('Failed to send link', err.message || 'Please try again', 'error');
-    btn.disabled = false;
-  } finally {
-    spinner.classList.add('hidden');
-    btnText.textContent = 'Send Magic Link';
-  }
-}
 
 
 function showProfile() { if (!currentUser) { showModal('auth-modal'); } else { toast(currentUser.profile?.name || 'You', currentUser.email, 'info'); } }
@@ -2164,7 +2256,7 @@ function showSellerDashboard() {
   document.getElementById('mob-ham-btn').style.display = 'flex';
   // Show/hide admin nav item
   const adminNavItem = document.getElementById('admin-nav-item');
-  if (adminNavItem) adminNavItem.style.display = currentUser?.email === ADMIN_EMAIL ? 'flex' : 'none';
+  if (adminNavItem) adminNavItem.style.display = 'none'; // handled in updateNavForUser
   document.body.classList.add('in-seller');
   currentRole = 'seller';
   stopCarousel();
@@ -2617,20 +2709,38 @@ function selectPM(method) {
 
 function payWithPaystack() {
   if (!currentUser) return;
-  const total = cart.reduce((s,c)=>s+(c.price*(c.qty||1)),0);
+
+  // ── Payment integrity check ─────────────────────────────────
+  if (!cart || cart.length === 0) { toast('Cart is empty','Add items before paying','warn'); return; }
+
+  // Recalculate total from server-fetched product prices (not user-modifiable)
+  const total = cart.reduce((s,c) => {
+    const price = parseFloat(c.price);
+    const qty   = Math.max(1, parseInt(c.qty) || 1);
+    if (isNaN(price) || price <= 0) return s;
+    return s + (price * qty);
+  }, 0);
+
+  if (total <= 0)          { toast('Invalid total','Cart total is invalid','error'); return; }
+  if (total > 100000000)   { toast('Total too high','Please contact support for large orders','warn'); return; }
+
+  const amountKobo = Math.round(total * 100); // Paystack uses kobo (integer only)
+  const ref = 'bs_' + Date.now() + '_' + Math.random().toString(36).substr(2,8);
+
   const handler = PaystackPop.setup({
     key: PAYSTACK_PUBLIC_KEY,
     email: currentUser.email,
-    amount: total * 100,
+    amount: amountKobo,
     currency: 'NGN',
-    ref: 'bs_' + Date.now() + '_' + Math.random().toString(36).substr(2,8),
-    metadata: { buyer_id: currentUser.id, cart: JSON.stringify(cart.map(c=>({id:c.id,name:c.name,qty:c.qty||1,price:c.price}))) },
+    ref,
+    metadata: {
+      buyer_id: currentUser.id,
+      cart_hash: btoa(JSON.stringify(cart.map(c=>({id:c.id,qty:c.qty||1,price:c.price})))).substring(0,200),
+      cart: JSON.stringify(cart.map(c=>({id:c.id,name:c.name,qty:c.qty||1,price:c.price})))
+    },
     callback: function(response) {
-      goCheckoutStep(3);  // show success screen
-      cart = []; saveCart();
-      document.getElementById('co-order-id').textContent = response.reference;
-      toast('Payment received! Order being confirmed…', '', 'success', 5000);
-   },
+      saveOrderToDb(response.reference, 'paystack', response.reference);
+    },
     onClose: function() { toast('Payment cancelled','','warn'); }
   });
   handler.openIframe();
@@ -2647,6 +2757,11 @@ function handleProofUpload(input) {
 async function submitTransferOrder() {
   const fileInput = document.getElementById('co-proof');
   if (!fileInput.files?.[0]) { toast('Please upload payment proof','','warn'); return; }
+  const proofFile = fileInput.files[0];
+  const ALLOWED_PROOF = ['image/jpeg','image/png','image/webp','image/heic','image/heif'];
+  const MAX_PROOF_SIZE = 10 * 1024 * 1024; // 10MB
+  if (!ALLOWED_PROOF.includes(proofFile.type)) { toast('Invalid file','Please upload a JPG or PNG screenshot','warn'); return; }
+  if (proofFile.size > MAX_PROOF_SIZE)         { toast('File too large','Maximum proof image size is 10MB','warn'); return; }
   const btn = document.getElementById('co-transfer-btn');
   btn.disabled = true; btn.innerHTML = '<span class="spinner"></span> Submitting…';
   try {
@@ -2690,18 +2805,13 @@ async function submitReview() {
   if (!selectedRating) { toast('Please select a rating','','warn'); return; }
   const text = document.getElementById('review-text').value.trim();
   if (!text) { toast('Please write a review','','warn'); return; }
-  const { error } = await db.from('reviews').insert([{
-    product_id: reviewProductId,
-    buyer_id: currentUser.id,
-    rating: selectedRating,
-    review_text: text,
-    created_at: new Date().toISOString()
-  }]);
-  if (error) { toast('Error', error.message, 'error'); return; }
-  // Update product avg rating
-  const { data: revs } = await db.from('reviews').select('rating').eq('product_id', reviewProductId);
-  const avg = revs?.length ? revs.reduce((s,r)=>s+r.rating,0)/revs.length : selectedRating;
-  await db.from('products').update({ avg_rating: Math.round(avg*10)/10, review_count: revs?.length||1 }).eq('id', reviewProductId);
+  try {
+    await callEdge('submit-review', {
+      product_id:  reviewProductId,
+      rating:      selectedRating,
+      review_text: text
+    });
+  } catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Review Submitted! ⭐', 'Thanks for your feedback!', 'success');
   closeModal('review-modal');
   loadProductReviews(reviewProductId);
@@ -2857,37 +2967,80 @@ async function submitProduct(e) {
   document.getElementById('pub-btn-text').textContent = '';
   document.getElementById('pub-spinner').classList.remove('hidden');
   try {
+    // ── Input validation ──────────────────────────────────────
+    const nameVal  = document.getElementById('p-name').value.trim();
+    const priceVal = parseFloat(document.getElementById('p-price').value);
+    const stockVal = parseInt(document.getElementById('p-stock').value) || 0;
+    const descVal  = document.getElementById('p-desc').value.trim();
+    const catVal   = document.getElementById('p-category').value;
+    const condVal  = document.getElementById('p-condition').value;
+    const locVal   = document.getElementById('p-location').value.trim();
+
+    const VALID_CATS  = ['electronics','fashion','home','phones','beauty','sports','dropship','other'];
+    const VALID_CONDS = ['new','used-like-new','used-good'];
+
+    if (!nameVal || nameVal.length < 3)          { toast('Invalid name','Product name must be at least 3 characters','warn'); return; }
+    if (nameVal.length > 120)                    { toast('Name too long','Max 120 characters','warn'); return; }
+    if (isNaN(priceVal) || priceVal <= 0)        { toast('Invalid price','Enter a price greater than 0','warn'); return; }
+    if (priceVal > 100000000)                    { toast('Price too high','Maximum price is ₦100,000,000','warn'); return; }
+    if (stockVal < 0 || stockVal > 100000)       { toast('Invalid stock','Stock must be between 0 and 100,000','warn'); return; }
+    if (descVal.length > 2000)                   { toast('Description too long','Max 2,000 characters','warn'); return; }
+    if (!VALID_CATS.includes(catVal))            { toast('Invalid category','Please select a valid category','warn'); return; }
+    if (!VALID_CONDS.includes(condVal))          { toast('Invalid condition','Please select a valid condition','warn'); return; }
+
+    // ── File upload security ───────────────────────────────────
+    const ALLOWED_IMG_TYPES = ['image/jpeg','image/png','image/webp','image/gif'];
+    const ALLOWED_VID_TYPES = ['video/mp4','video/webm','video/ogg','video/quicktime'];
+    const MAX_IMG_SIZE = 5 * 1024 * 1024;   // 5MB
+    const MAX_VID_SIZE = 50 * 1024 * 1024;  // 50MB
+
     const imgFile = document.getElementById('p-image').files[0];
     const vidFile = document.getElementById('p-video').files[0];
-    let imgUrl = '', vidUrl = '';
+
     if (imgFile) {
-      const { data, error } = await db.storage.from('products').upload(`imgs/${Date.now()}.${imgFile.name.split('.').pop()}`, imgFile);
-      if (!error) { const { data: ud } = db.storage.from('products').getPublicUrl(data.path); imgUrl = ud.publicUrl; }
+      if (!ALLOWED_IMG_TYPES.includes(imgFile.type)) { toast('Invalid image','Only JPG, PNG, WebP, GIF allowed','warn'); return; }
+      if (imgFile.size > MAX_IMG_SIZE)               { toast('Image too large','Maximum image size is 5MB','warn'); return; }
     }
     if (vidFile) {
-      const { data, error } = await db.storage.from('products').upload(`vids/${Date.now()}.${vidFile.name.split('.').pop()}`, vidFile);
-      if (!error) { const { data: ud } = db.storage.from('products').getPublicUrl(data.path); vidUrl = ud.publicUrl; }
+      if (!ALLOWED_VID_TYPES.includes(vidFile.type)) { toast('Invalid video','Only MP4, WebM, OGG, MOV allowed','warn'); return; }
+      if (vidFile.size > MAX_VID_SIZE)               { toast('Video too large','Maximum video size is 50MB','warn'); return; }
     }
-    const price = parseFloat(document.getElementById('p-price').value);
-    const origPrice = parseFloat(document.getElementById('p-orig-price').value) || price;
-    const stock = parseInt(document.getElementById('p-stock').value)||0;
+
+    let imgUrl = '', vidUrl = '';
+    if (imgFile) {
+      const ext = imgFile.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
+      const { data, error } = await db.storage.from('products').upload(`imgs/${currentUser.id}/${Date.now()}.${ext}`, imgFile, { upsert: false });
+      if (!error) { const { data: ud } = db.storage.from('products').getPublicUrl(data.path); imgUrl = sanitizeUrl(ud.publicUrl); }
+    }
+    if (vidFile) {
+      const ext = vidFile.name.split('.').pop().toLowerCase().replace(/[^a-z0-9]/g,'');
+      const { data, error } = await db.storage.from('products').upload(`vids/${currentUser.id}/${Date.now()}.${ext}`, vidFile, { upsert: false });
+      if (!error) { const { data: ud } = db.storage.from('products').getPublicUrl(data.path); vidUrl = sanitizeUrl(ud.publicUrl); }
+    }
+
+    const price    = priceVal;
+    const origPrice= parseFloat(document.getElementById('p-orig-price').value) || price;
+    const stock    = stockVal;
     const prodData = {
-      name: document.getElementById('p-name').value.trim(),
-      description: document.getElementById('p-desc').value.trim(),
-      price, original_price: origPrice,
-      category: document.getElementById('p-category').value,
-      condition: document.getElementById('p-condition').value,
-      location: document.getElementById('p-location').value.trim(),
+      name: nameVal,
+      description: descVal,
+      price, original_price: Math.max(origPrice, price),
+      category: catVal,
+      condition: condVal,
+      location: locVal.substring(0, 100),
       has_video: !!vidUrl, negotiable: document.getElementById('p-negotiable').checked,
-      stock_quantity: stock, low_stock_alert: parseInt(document.getElementById('p-low-stock').value)||3,
+      stock_quantity: stock, low_stock_alert: Math.max(0, parseInt(document.getElementById('p-low-stock').value)||3),
     };
     if (imgUrl) prodData.image_url = imgUrl;
     if (vidUrl) prodData.video_url = vidUrl;
 
     if (editingProductId) {
       // UPDATE mode
-      const { error: updateErr } = await db.from('products').update(prodData).eq('id', editingProductId).eq('seller_id', currentUser.id);
-      if (updateErr) throw updateErr;
+      await callEdge('manage-product', {
+        action: 'update',
+        product_id: editingProductId,
+        data: { ...prodData, image_url: imgUrl || undefined, video_url: vidUrl || undefined }
+      });
       editingProductId = null;
       toast('Product Updated! ✅', 'Changes saved successfully', 'success');
       const cancelBtn = document.getElementById('edit-cancel-btn');
@@ -2895,13 +3048,11 @@ async function submitProduct(e) {
       document.querySelector('#ds-add-product .dash-page-title').textContent = 'Add New Product';
       document.querySelector('#ds-add-product .dash-page-sub').textContent = 'Products with videos get 3× more sales! 🎬';
     } else {
-      // INSERT mode
-      const { error: insertErr } = await db.from('products').insert([{
-        seller_id: currentUser.id, ...prodData,
-        status: 'active', avg_rating: 5, review_count: 0,
-        created_at: new Date().toISOString()
-      }]);
-      if (insertErr) throw insertErr;
+      // INSERT mode — server-side via Edge Function
+      await callEdge('manage-product', {
+        action: 'create',
+        data: { ...prodData, image_url: imgUrl, video_url: vidUrl }
+      });
       toast('Product Published! 🎉', 'Your product is now live', 'success');
     }
     document.getElementById('add-prod-form').reset();
@@ -2914,15 +3065,16 @@ async function submitProduct(e) {
 
 async function deleteProduct(id) {
   if (!confirm('Delete this product?')) return;
-  const { error } = await db.from('products').delete().eq('id', id).eq('seller_id', currentUser.id);
-  if (error) { toast('Error', error.message, 'error'); return; }
+  try { await callEdge('manage-product', { action: 'delete', product_id: id }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Product Deleted', '', 'info');
   loadSellerProds();
 }
 
 async function toggleProductStatus(id, current) {
   const next = current === 'active' ? 'paused' : 'active';
-  await db.from('products').update({ status: next }).eq('id', id);
+  try { await callEdge('manage-product', { action: 'toggle_status', product_id: id }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   loadSellerProds();
 }
 
@@ -3015,9 +3167,11 @@ async function loadSellerOrders() {
 }
 
 async function updateOrderStatus(id, status) {
-  await db.from('orders').update({ status }).eq('id', id);
-  toast(`Order ${status}!`, '', 'success');
-  loadSellerOrders();
+  try {
+    await callEdge('admin-action', { action: 'update_order', target_id: id, data: { status } });
+    toast(`Order ${status}!`, '', 'success');
+    loadSellerOrders();
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 // ====================================================
@@ -3077,7 +3231,8 @@ function payCommissionPaystack() {
     currency: 'NGN',
     ref: 'comm_' + Date.now(),
     callback: async (response) => {
-      await db.from('profiles').update({ commission_paid: true }).eq('id', currentUser.id);
+      // Commission confirmed via Paystack — direct update for immediate UI response
+      await callEdge('admin-action', { action: 'toggle_commission', target_id: currentUser.id, data: { commission_paid: true } }).catch(() => db.from('profiles').update({ commission_paid: true }).eq('id', currentUser.id));
       currentUser.profile.commission_paid = true;
       document.getElementById('suspended-modal').classList.remove('open');
       document.body.classList.remove('modal-open');
@@ -3132,8 +3287,7 @@ async function saveSettings(e) {
     paystack_key: document.getElementById('s-paystack-key').value.trim(),
     notif_email: document.getElementById('s-notif-email').value.trim()
   };
-  const { error } = await db.from('profiles').update(updates).eq('id', currentUser.id);
-  if (error) { toast('Error', error.message, 'error'); return; }
+  await callEdge('update-profile', updates);
   if (currentUser.profile) Object.assign(currentUser.profile, updates);
   toast('Settings Saved! ✅', '', 'success');
   loadWithdrawalData();
@@ -3155,16 +3309,14 @@ async function loadWithdrawalData() {
 async function requestWithdrawal() {
   const amount = parseFloat(document.getElementById('wd-amount').value);
   if (!amount || amount < 5000) { toast('Minimum withdrawal is ₦5,000','','warn'); return; }
-  const { error } = await db.from('withdrawals').insert([{
-    seller_id: currentUser.id,
-    amount,
-    bank_name: currentUser.profile?.bank_name||'',
-    account_number: currentUser.profile?.account_number||'',
-    account_name: currentUser.profile?.account_name||'',
-    status: 'pending',
-    created_at: new Date().toISOString()
-  }]);
-  if (error) { toast('Error', error.message, 'error'); return; }
+  try {
+    await callEdge('request-withdrawal', {
+      amount,
+      bank_name:      currentUser.profile?.bank_name      || '',
+      account_number: currentUser.profile?.account_number || '',
+      account_name:   currentUser.profile?.account_name   || ''
+    });
+  } catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Withdrawal Requested!', `₦${fmtNum(amount)} – processed within 24hrs`, 'success');
   document.getElementById('wd-amount').value = '';
   document.getElementById('wd-pending').textContent = fmtN(amount);
@@ -3179,18 +3331,26 @@ function connectSupplier(supplier) {
 
 async function importDropship(name, cost, price, emoji) {
   if (!currentUser) { showModal('auth-modal'); return; }
-  const { error } = await db.from('products').insert([{
-    seller_id: currentUser.id, name, description: `Imported from global supplier. ${name}`,
-    price, original_price: price, category: 'dropship',
-    condition: 'new', location: 'International', image_url: '',
-    has_video: false, negotiable: false, stock_quantity: 999,
-    status: 'active', avg_rating: 4.5, review_count: 0,
-    created_at: new Date().toISOString()
-  }]);
-  if (error) { toast('Error', error.message, 'error'); return; }
-  const imported = parseInt(document.getElementById('ds-imported').textContent)||0;
-  document.getElementById('ds-imported').textContent = imported+1;
-  toast(`${name} Imported!`, `Listed at ${fmtN(price)}`, 'success');
+  try {
+    await callEdge('manage-product', { action: 'create', data: {
+      name,
+      description:    `Imported from global supplier. ${name}`,
+      price,
+      original_price: price,
+      category:       'dropship',
+      condition:      'new',
+      location:       'International',
+      image_url:      '',
+      has_video:      false,
+      negotiable:     false,
+      stock_quantity: 999
+    }});
+    const imported = parseInt(document.getElementById('ds-imported').textContent) || 0;
+    document.getElementById('ds-imported').textContent = imported + 1;
+    toast(`${emoji} ${name} Imported!`, `Listed at ${fmtN(price)}`, 'success');
+  } catch(e) {
+    toast('Import Failed', e.message, 'error');
+  }
 }
 
 // ====================================================
@@ -3247,12 +3407,13 @@ async function submitDispute() {
   const type = document.getElementById('dispute-type').value;
   const desc = document.getElementById('dispute-desc').value.trim();
   if (!type || !desc) { toast('Please fill all fields','','warn'); return; }
-  const { error } = await db.from('disputes').insert([{
-    order_id: disputeOrderId, buyer_id: currentUser?.id,
-    dispute_type: type, description: desc,
-    status: 'open', created_at: new Date().toISOString()
-  }]);
-  if (error) { toast('Error', error.message, 'error'); return; }
+  try {
+    await callEdge('submit-dispute', {
+      order_id:     disputeOrderId,
+      dispute_type: type,
+      description:  desc
+    });
+  } catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Dispute Filed', 'Admin will review within 24hrs', 'success');
   closeModal('dispute-modal');
 }
@@ -3264,7 +3425,11 @@ let _adminSellersCache = [];
 let _adminRevenueChart = null;
 
 function isAdmin() {
-  return currentUser?.email === ADMIN_EMAIL;
+  // Email check is primary — profile role is set automatically on first load
+  if (currentUser?.email !== ADMIN_EMAIL) return false;
+  // If profile loaded and role is explicitly non-admin, deny
+  if (currentUser?.profile?.role && currentUser.profile.role !== 'admin') return false;
+  return true;
 }
 
 function guardAdminPanel() {
@@ -3403,7 +3568,8 @@ function _renderAdminSellerList(sellers) {
 }
 
 async function adminToggleCommission(id, paid) {
-  await db.from('profiles').update({ commission_paid: paid }).eq('id', id);
+  try { await callEdge('admin-action', { action: 'toggle_commission', target_id: id, data: { commission_paid: paid } }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   // Optimistic update on card
   const card = document.getElementById('asc-' + id);
   if (card) {
@@ -3418,8 +3584,8 @@ function adminViewStorefront(id) { viewStorefront(id); }
 
 async function adminDeleteSeller(id) {
   if (!confirm('Permanently delete this seller and all their products?')) return;
-  await db.from('products').delete().eq('seller_id', id);
-  await db.from('profiles').delete().eq('id', id);
+  try { await callEdge('admin-action', { action: 'delete_seller', target_id: id }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Seller Deleted', '', 'info');
   loadAdminSellers();
 }
@@ -3465,9 +3631,11 @@ async function loadAdminOrders() {
 }
 
 async function adminUpdateOrder(id, status) {
-  await db.from('orders').update({ status }).eq('id', id);
-  toast('Order updated to ' + status, '', 'success');
-  loadAdminOrders();
+  try {
+    await callEdge('admin-action', { action: 'update_order', target_id: id, data: { status } });
+    toast('Order updated to ' + status, '', 'success');
+    loadAdminOrders();
+  } catch(e) { toast('Error', e.message, 'error'); }
 }
 
 /* ── DISPUTES ── */
@@ -3499,14 +3667,15 @@ async function loadAdminDisputes() {
 }
 
 async function resolveDispute(id) {
-  await db.from('disputes').update({ status: 'resolved' }).eq('id', id);
+  try { await callEdge('admin-action', { action: 'resolve_dispute', target_id: id }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Dispute Resolved ✅', '', 'success');
   loadAdminDisputes();
 }
 
 async function refundDispute(disputeId, orderId) {
-  await db.from('disputes').update({ status: 'refunded' }).eq('id', disputeId);
-  await db.from('orders').update({ status: 'refunded' }).eq('id', orderId);
+  try { await callEdge('admin-action', { action: 'refund_dispute', target_id: disputeId, data: { order_id: orderId } }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Refund Issued', 'Order ' + orderId + ' marked refunded', 'success');
   loadAdminDisputes();
 }
@@ -3550,14 +3719,16 @@ async function loadAdminWithdrawals() {
 }
 
 async function adminPayWithdrawal(id) {
-  await db.from('withdrawals').update({ status:'paid', paid_at: new Date().toISOString() }).eq('id', id);
+  try { await callEdge('admin-action', { action: 'pay_withdrawal', target_id: id }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Withdrawal Marked Paid ✅', '', 'success');
   loadAdminWithdrawals();
 }
 
 async function adminRejectWithdrawal(id) {
   const reason = prompt('Reason for rejection (optional):') || 'Rejected by admin';
-  await db.from('withdrawals').update({ status:'rejected', reject_reason: reason }).eq('id', id);
+  try { await callEdge('admin-action', { action: 'reject_withdrawal', target_id: id, data: { reason } }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('Withdrawal Rejected', '', 'warn');
   loadAdminWithdrawals();
 }
@@ -3570,8 +3741,8 @@ async function sendBroadcast() {
   const target = document.getElementById('bc-target').value;
   const type   = document.querySelector('input[name="bc-type"]:checked')?.value || 'info';
   if (!title || !body) { toast('Fill in title and message', '', 'warn'); return; }
-  const { error } = await db.from('broadcasts').insert([{ title, body, target, type, created_by: currentUser.id, created_at: new Date().toISOString() }]);
-  if (error) { toast('Error', error.message, 'error'); return; }
+  try { await callEdge('send-broadcast', { title, body, target, type }); }
+  catch(e) { toast('Error', e.message, 'error'); return; }
   toast('📣 Broadcast Sent!', 'To: ' + target, 'success');
   document.getElementById('bc-title').value = '';
   document.getElementById('bc-body').value  = '';
@@ -3814,41 +3985,41 @@ function sendWhatsAppOrderNotification(order, sellerWa) {
 // Override saveOrderToDb to also trigger WA notification
 const _origSaveOrder = saveOrderToDb;
 async function saveOrderToDb(txRef, method, paystackRef, proofUrl='') {
-  const total = cart.reduce((s,c)=>s+(c.price*(c.qty||1)),0);
-  const orderId = 'ORD-' + Date.now().toString(36).toUpperCase();
-  const orderData = {
-    id: orderId,
-    buyer_id: currentUser.id,
-    seller_id: cart[0]?.seller_id,
-    items: cart.map(c=>({id:c.id,name:c.name,qty:c.qty||1,price:c.price,image_url:c.image_url})),
-    total_amount: total,
-    delivery_name: document.getElementById('co-name').value,
-    delivery_phone: document.getElementById('co-phone').value,
-    delivery_address: document.getElementById('co-address').value,
-    payment_method: method,
-    payment_ref: txRef || paystackRef || '',
-    proof_url: proofUrl,
-    status: method === 'paystack' ? 'confirmed' : 'pending',
-    created_at: new Date().toISOString()
-  };
-  const { error } = await db.from('orders').insert([orderData]);
-  if (error) { toast('Order Error', error.message, 'error'); return; }
+  try {
+    const result = await callEdge('create-order', {
+      cart: cart.map(c => ({ id: c.id, name: c.name, qty: c.qty||1, price: c.price, image_url: c.image_url })),
+      delivery: {
+        name:    document.getElementById('co-name').value,
+        phone:   document.getElementById('co-phone').value,
+        address: document.getElementById('co-address').value
+      },
+      payment_method: method,
+      payment_ref:    txRef || paystackRef || '',
+      proof_url:      proofUrl,
+      referral_code:  localStorage.getItem('bs_ref') || ''
+    });
 
-  // Track referral conversion
-  const refCode = localStorage.getItem('bs_ref');
-  if (refCode) {
-    await db.from('referrals').insert([{ referred_id: currentUser.id, referrer_code: refCode, amount: 500, paid: false, created_at: new Date().toISOString() }]).then(()=>localStorage.removeItem('bs_ref'));
+    if (!result.success) { toast('Order Error', result.error, 'error'); return; }
+
+    const orderId = result.order_id;
+    const total   = result.total;
+
+    // Clear referral cookie
+    localStorage.removeItem('bs_ref');
+
+    // WhatsApp notification to seller
+    const seller = cart[0]?.profiles;
+    if (seller?.whatsapp) sendWhatsAppOrderNotification({ id: orderId, total_amount: total }, seller.whatsapp);
+
+    cart = []; saveCart();
+    document.getElementById('co-order-id').textContent = orderId;
+    document.getElementById('co-order-total').textContent = fmtN(total);
+    goCheckoutStep(3);
+    toast('Order Placed! 🎉', `Order ${orderId} confirmed`, 'success', 5000);
+
+  } catch(err) {
+    toast('Order Failed', err.message, 'error');
   }
-
-  // WhatsApp notification to seller
-  const seller = cart[0]?.profiles;
-  if (seller?.whatsapp) sendWhatsAppOrderNotification(orderData, seller.whatsapp);
-
-  cart = []; saveCart();
-  document.getElementById('co-order-id').textContent = orderId;
-  document.getElementById('co-order-total').textContent = fmtN(total);
-  goCheckoutStep(3);
-  toast('Order Placed! 🎉', `Order ${orderId} confirmed`, 'success', 5000);
 }
 
 // ====================================================
@@ -3900,7 +4071,26 @@ async function viewStorefront(sellerId) {
 function fmtN(n) { return '₦' + fmtNum(n); }
 function fmtNum(n) { if (!n && n!==0) return '0'; return Math.round(n).toLocaleString('en-NG'); }
 function fmtDate(d) { if (!d) return ''; return new Date(d).toLocaleDateString('en-NG',{day:'numeric',month:'short',year:'numeric'}); }
-function escHtml(s) { return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function escHtml(s) {
+  return String(s||'')
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;')
+    .replace(/'/g,'&#x27;')
+    .replace(/\//g,'&#x2F;');
+}
+function escAttr(s) {
+  // Safe for use inside HTML attributes
+  return String(s||'').replace(/[^a-zA-Z0-9 _\-\.,:@]/g, c => '&#'+c.charCodeAt(0)+';');
+}
+function sanitizeUrl(url) {
+  // Block javascript: and data: URIs
+  if (!url) return '';
+  const u = String(url).trim().toLowerCase();
+  if (u.startsWith('javascript:') || u.startsWith('data:text') || u.startsWith('vbscript:')) return '';
+  return String(url).trim();
+}
 
 // Share product from detail modal
 function shareCurrentProduct() {
@@ -3911,7 +4101,22 @@ function shareCurrentProduct() {
 //  INIT
 // ====================================================
 (async function init() {
-  await fetchConfig(); 
+  // ── Wait for Supabase CDN to be ready ─────────────────────────
+  let attempts = 0;
+  while (!db && attempts < 20) {
+    await new Promise(r => setTimeout(r, 150));
+    db = initSupabaseClient();
+    attempts++;
+  }
+  if (!db) {
+    document.body.innerHTML = `<div style="display:flex;flex-direction:column;align-items:center;justify-content:center;height:100vh;font-family:sans-serif;padding:2rem;text-align:center">
+      <div style="font-size:3rem;margin-bottom:1rem">⚠️</div>
+      <h2 style="color:#dc2626;margin-bottom:.5rem">Connection Failed</h2>
+      <p style="color:#6b7280;max-width:360px">Could not connect to the server. Check your internet connection and try again.</p>
+      <button onclick="location.reload()" style="margin-top:1.5rem;padding:.75rem 2rem;background:#16a34a;color:#fff;border:none;border-radius:8px;cursor:pointer;font-size:1rem;font-weight:700">Refresh Page</button>
+    </div>`;
+    return;
+  }
   await checkSession();
   updateCartCount();
   handleDeepLink();
